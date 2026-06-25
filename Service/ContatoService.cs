@@ -1,42 +1,36 @@
 ﻿using AgendaApi.Models;
-using AgendaApi.Services;
+using AgendaApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace AgendaApi.Services
 {
     public class ContatoService
     {
-        private static List<Contato> contatos = new List<Contato>
+        private readonly AgendaContext _context;
+
+        public ContatoService(AgendaContext context)
         {
-            new Contato
-            {
-                Id = 1,
-                Nome = "Susi",
-                Tel1 = "99999-9999",
-                Tel2 = "",
-                Detalhes = "Contato de teste"
-            }
-        };
+            // _context recebe uma copia do banco de dados(AgendaApi).
+            _context = context;
+        }
 
         public List<Contato> ListarTodos()
         {
-            return contatos;
+            return _context.Contatos.ToList();
         }
 
 
         public List<Contato> BuscarPorNome(string nome)
         {
-            return contatos
+            return _context.Contatos
                 .Where(c => c.Nome.Contains(nome))
                 .ToList();
         }
 
         public Contato Adicionar(Contato contato)
         {
-
-            //if (string.IsNullOrWhiteSpace(contato.Nome))
-            //    throw new Exception("O nome é obrigatório.");
-
-            contatos.Add(contato);
+            _context.Contatos.Add(contato);
+            _context.SaveChanges();
 
             return contato;
         }
@@ -47,7 +41,7 @@ namespace AgendaApi.Services
         public Contato? Alterar(int id, Contato contatoAlterado)
         {
             // Pega o primeiro contato cujo Id seja igual ao id recebido
-            var contato = contatos.FirstOrDefault(c => c.Id == id);
+            var contato = _context.Contatos.FirstOrDefault(c => c.Id == id);
 
             if (contato == null)
                 return null;
@@ -56,18 +50,20 @@ namespace AgendaApi.Services
             contato.Tel1 = contatoAlterado.Tel1;
             contato.Tel2 = contatoAlterado.Tel2;
             contato.Detalhes = contatoAlterado.Detalhes;
+            _context.SaveChanges();
 
             return contato;
         }
 
         public bool Excluir(int id)
         {
-            var contato = contatos.FirstOrDefault(c => c.Id == id);
+            var contato = _context.Contatos.FirstOrDefault(c => c.Id == id);
 
             if (contato == null)
                 return false;
 
-            contatos.Remove(contato);
+            _context.Contatos.Remove(contato);
+            _context.SaveChanges();
 
             return true;
         }

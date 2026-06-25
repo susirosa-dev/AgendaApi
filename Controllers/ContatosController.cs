@@ -1,4 +1,6 @@
-﻿using AgendaApi.Models;
+﻿using AgendaApi.Data;
+using AgendaApi.Models;
+using AgendaApi.DTOs;
 using AgendaApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,8 +23,15 @@ namespace AgendaApi.Controllers
 
     // ContatosController herda classe Controller de API (APIs REST)
     public class ContatosController : ControllerBase
-    {       
-        private ContatoService contatoService = new ContatoService();
+    {
+        // Recebe uma instância de ContatoService criada automaticamente pelo ASP.NET Core
+        // através da Injeção de Dependência (Dependency Injection).
+        private readonly ContatoService contatoService;
+
+        public ContatosController(ContatoService contatoService)
+        {
+            this.contatoService = contatoService;
+        }
 
         // Retorna lista de contatos e um código HTTP adequado      
         [HttpGet]  // Este método responde ao verbo HTTP GET        
@@ -40,7 +49,7 @@ namespace AgendaApi.Controllers
                 .FirstOrDefault(c => c.Id == id);
 
             if (contato == null)
-                return NotFound();
+                return NotFound("Contato não encontrado.");
 
             return Ok(contato);
         }
@@ -51,14 +60,24 @@ namespace AgendaApi.Controllers
         {
             var resultado = contatoService.BuscarPorNome(nome);
 
-            return Ok(resultado);
-        }
+           // if (!resultado.Any())
+           //     return NotFound("Nenhum contato encontrado para o nome informado.");
 
+            return Ok(resultado); // Retorna cód 200 mesmo vazia
+        }
 
         // Adiciona registro e retorna código HTTP adequado
         [HttpPost]
-        public ActionResult Post(Contato contato)
+        public ActionResult Post(ContatoDTO contatoDTO)
         {
+            var contato = new Contato
+            {
+                Nome = contatoDTO.Nome,
+                Tel1 = contatoDTO.Tel1,
+                Tel2 = contatoDTO.Tel2,
+                Detalhes = contatoDTO.Detalhes
+            };
+
             var contatoCriado = contatoService.Adicionar(contato);
 
             return Ok(contatoCriado);
@@ -66,12 +85,20 @@ namespace AgendaApi.Controllers
 
         // Altera registro conforme id selecionado e retorna código HTTP adequado
         [HttpPut("{id}")]
-        public ActionResult Put(int id, Contato contatoAlterado)
+        public ActionResult Put(int id, ContatoDTO contatoDTO)
         {
+            var contatoAlterado = new Contato
+            {
+                Nome = contatoDTO.Nome,
+                Tel1 = contatoDTO.Tel1,
+                Tel2 = contatoDTO.Tel2,
+                Detalhes = contatoDTO.Detalhes
+            };
+
             var contato = contatoService.Alterar(id, contatoAlterado);
 
-            if (contato == null)
-                return NotFound();
+            if (contato == null)                
+                return NotFound("Contato não encontrado.");
 
             return Ok(contato);
         }
@@ -83,7 +110,7 @@ namespace AgendaApi.Controllers
             var sucesso = contatoService.Excluir(id);
 
             if (!sucesso)
-                return NotFound();
+                return NotFound("Contato não encontrado.");
 
             return Ok();
         }
